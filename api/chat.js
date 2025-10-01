@@ -25,12 +25,22 @@ const handler = async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: "No prompt provided" });
     }
+    
+    // --- MUDANÇA NA LÓGICA A PARTIR DAQUI ---
 
-    // <-- A ÚNICA MUDANÇA ESTÁ AQUI
+    // Usaremos o modelo mais recente e recomendado
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // Inicia uma sessão de chat (não mantém o histórico neste caso, mas usa o método correto)
+    const chat = model.startChat();
+
+    // Envia a mensagem do usuário para a sessão de chat
+    const result = await chat.sendMessage(prompt);
+    
+    const response = result.response;
+    const text = response.text();
+    
+    // --- FIM DA MUDANÇA NA LÓGICA ---
 
     return res.status(200).json({ reply: text });
 
