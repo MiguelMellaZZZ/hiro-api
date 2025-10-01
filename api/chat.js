@@ -29,7 +29,7 @@ const handler = async (req, res) => {
     // --- MUDANÇA NA LÓGICA A PARTIR DAQUI ---
 
     // Usaremos o modelo mais recente e recomendado
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     // Inicia uma sessão de chat (não mantém o histórico neste caso, mas usa o método correto)
     const chat = model.startChat();
