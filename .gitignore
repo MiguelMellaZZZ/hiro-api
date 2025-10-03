@@ -2,4 +2,10 @@
 node_modules
 
 # Ignorar arquivos de ambiente com segredos
+<<<<<<< HEAD
 .env
+=======
+.env
+
+archive.zip
+>>>>>>> 364225a (Atualizando parametros da IA)
