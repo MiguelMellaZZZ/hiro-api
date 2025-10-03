@@ -2,24 +2,32 @@ import fs from "fs";
 import csv from "csv-parser";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Carregar CSV
+// Carregar CSV apenas uma vez
 let foodData = [];
-fs.createReadStream("tbca.csv")
-  .pipe(csv({ separator: "," }))
-  .on("data", (row) => {
-    foodData.push(row);
-  })
-  .on("end", () => {
-    console.log("Base TBCA carregada:", foodData.length, "itens");
-  });
 
-// Detecta se a pergunta é nutricional
+if (foodData.length === 0) {
+  const loadCSV = () =>
+    new Promise((resolve, reject) => {
+      const data = [];
+      fs.createReadStream("tbca.csv")
+        .pipe(csv({ separator: "," }))
+        .on("data", (row) => data.push(row))
+        .on("end", () => {
+          foodData = data;
+          console.log("Base TBCA carregada:", foodData.length, "itens");
+          resolve();
+        })
+        .on("error", reject);
+    });
+
+  await loadCSV();
+}
+
 function isNutritionQuery(prompt) {
   const keywords = ["caloria", "proteína", "carbo", "gordura", "nutri", "valor energético", "kcal"];
   return keywords.some((kw) => prompt.toLowerCase().includes(kw));
 }
 
-// Busca alimento no CSV
 function searchFoodInCSV(query) {
   const words = query.toLowerCase().split(/\s+/);
   const ignore = ["quantas", "quanto", "tem", "uma", "um", "de", "no", "na", "o", "a", "os", "as"];
@@ -50,7 +58,6 @@ const handler = async (req, res) => {
 
       if (found) {
         extraContext = `
-Dados oficiais da base TBCA:
 Alimento: ${found.Food}
 Calorias: ${found.Calories} kcal
 Proteínas: ${found.Protein} g
@@ -58,25 +65,16 @@ Carboidratos: ${found.Carbohydrate} g
 Gorduras: ${found.Fat} g
 `;
       } else {
-        extraContext = `
-(Não encontrei esse alimento na base TBCA. 
-Use valores médios de referência TACO/USDA para responder.)`;
+        extraContext = `(Não encontrei esse alimento na base TBCA. Use valores médios de referência TACO/USDA.)`;
       }
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const chat = model.startChat();
-    const result = await chat.sendMessage(
-      `Você é Hiro, uma nutricionista virtual acessível e profissional.
-      
-${extraContext}
-
-Pergunta do usuário: ${prompt}`
-    );
-
+    const result = await model.generateContent(`${prompt}\n${extraContext}`);
     const text = result.response.text();
+
     return res.status(200).json({ reply: text });
 
   } catch (err) {
