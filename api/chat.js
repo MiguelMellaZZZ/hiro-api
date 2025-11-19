@@ -49,7 +49,7 @@ const handler = async (req, res) => {
     }
 
     // pega o modelo certo (da lista mais recente)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     // concatena o systemPrompt + pergunta do usuário
     const result = await model.generateContent(`${systemPrompt}\n\nPergunta do usuário: ${prompt}`);
